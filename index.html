@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LDBAA - Posiciones y Fixture</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- FontAwesome for Premium Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="glass-bg"></div>
+    <div class="app-container">
+      <!-- Header Section -->
+      <header class="app-header animate-fade-in">
+        <div class="logo-area">
+          <div class="logo-icon"><i class="fa-solid fa-trophy"></i></div>
+          <div>
+            <h1>LDBAA</h1>
+            <p class="subtitle">Gestión de Posiciones y Encuentros</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <!-- Category Switcher -->
+          <div class="category-toggle">
+            <button
+              id="btn-masc"
+              class="toggle-btn active"
+              onclick="setCategory('masculino')"
+            >
+              <i class="fa-solid fa-mars"></i> Masculino
+            </button>
+            <button
+              id="btn-fem"
+              class="toggle-btn"
+              onclick="setCategory('femenino')"
+            >
+              <i class="fa-solid fa-venus"></i> Femenino
+            </button>
+          </div>
+
+          <div id="auth-container">
+            <!-- Managed dynamically by app.js -->
+          </div>
+
+          <!-- <button
+            id="btn-settings"
+            class="action-btn secondary-btn"
+            onclick="openSettingsModal()"
+            title="Editar Equipos"
+            style="display: none"
+          >
+            <i class="fa-solid fa-gear"></i>
+          </button> -->
+          <!-- <button id="btn-reset" class="action-btn danger-btn" onclick="confirmReset()" title="Reiniciar Resultados" style="display: none;">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button> -->
+        </div>
+      </header>
+
+      <!-- Group Selector Tabs -->
+      <nav class="group-tabs animate-fade-in" id="group-tabs-container">
+        <!-- Dynamically populated -->
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- Standings Card -->
+        <section class="content-card standings-card animate-slide-up">
+          <div class="card-header">
+            <h2>
+              <i class="fa-solid fa-ranking-star"></i> Tabla de Posiciones
+            </h2>
+            <span class="group-badge" id="current-group-badge">Grupo 1</span>
+          </div>
+          <div class="table-responsive">
+            <table class="standings-table">
+              <thead>
+                <tr>
+                  <th class="col-pos">#</th>
+                  <th class="col-team">Equipo</th>
+                  <th class="col-stat" title="Partidos Jugados">PJ</th>
+                  <th class="col-stat" title="Partidos Ganados">PG</th>
+                  <th class="col-stat" title="Partidos Empatados">PE</th>
+                  <th class="col-stat" title="Partidos Perdidos">PP</th>
+                  <th class="col-stat" title="Goles a Favor">GF</th>
+                  <th class="col-stat" title="Goles en Contra">GC</th>
+                  <th class="col-stat" title="Diferencia de Goles">DG</th>
+                  <th class="col-pts" title="Puntos">Pts</th>
+                </tr>
+              </thead>
+              <tbody id="standings-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Fixture / Matches Card -->
+        <section
+          class="content-card matches-card animate-slide-up"
+          style="animation-delay: 0.1s"
+        >
+          <div class="card-header">
+            <h2>
+              <i class="fa-solid fa-calendar-days"></i> Encuentros (Ida y
+              Vuelta)
+            </h2>
+            <div class="fixture-filter">
+              <select id="jornada-select" onchange="filterJornada(this.value)">
+                <option value="all">Todas las Jornadas</option>
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+          </div>
+
+          <div class="fixture-container" id="fixture-container">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+      <div class="modal-content animate-zoom-in">
+        <div class="modal-header">
+          <h3>
+            <i class="fa-solid fa-edit"></i> Personalizar Nombres de Equipos
+          </h3>
+          <button class="close-modal-btn" onclick="closeSettingsModal()">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-desc">
+            Edita los nombres de los equipos para el grupo y categoría
+            seleccionados. Los cambios se guardarán automáticamente.
+          </p>
+          <div id="teams-edit-list" class="teams-edit-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="action-btn primary-btn" onclick="closeSettingsModal()">
+            Listo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Confirmation Toast/Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+      <div class="modal-content confirm-box animate-zoom-in">
+        <div class="modal-header">
+          <h3>¿Reiniciar resultados?</h3>
+        </div>
+        <div class="modal-body">
+          <p>
+            Esta acción borrará todos los marcadores ingresados en esta
+            categoría y grupo. Esta acción no se puede deshacer.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="action-btn secondary-btn"
+            onclick="closeConfirmModal()"
+          >
+            Cancelar
+          </button>
+          <button class="action-btn danger-btn" onclick="resetScores()">
+            Reiniciar
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal-overlay">
+      <div class="modal-content confirm-box animate-zoom-in">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-lock"></i> Iniciar Sesión</h3>
+          <button class="close-modal-btn" onclick="closeLoginModal()">
+            &times;
+          </button>
+        </div>
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="modal-body">
+            <div
+              class="form-group"
+              style="display: flex; flex-direction: column; gap: 0.35rem"
+            >
+              <label
+                for="login-email"
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                  color: var(--text-secondary);
+                "
+                >Correo Electrónico</label
+              >
+              <input
+                type="email"
+                id="login-email"
+                class="team-input"
+                required
+                placeholder="admin@gmail.com"
+              />
+            </div>
+            <div
+              class="form-group"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 0.35rem;
+                margin-top: 1rem;
+              "
+            >
+              <label
+                for="login-password"
+                style="
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                  color: var(--text-secondary);
+                "
+                >Contraseña</label
+              >
+              <input
+                type="password"
+                id="login-password"
+                class="team-input"
+                required
+                placeholder="••••••••"
+              />
+            </div>
+            <p
+              id="login-error"
+              style="
+                display: none;
+                color: var(--danger);
+                font-size: 0.85rem;
+                margin-top: 0.75rem;
+                font-weight: 600;
+              "
+            ></p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="action-btn secondary-btn"
+              onclick="closeLoginModal()"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="action-btn primary-btn">Entrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
