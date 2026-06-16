@@ -11,11 +11,11 @@ const firebaseConfig = {
   databaseURL: "https://ldbaa-posiciones-default-rtdb.firebaseio.com"
 };
 
-let database = null;
+let db = null;
 try {
   if (typeof firebase !== "undefined") {
     firebase.initializeApp(firebaseConfig);
-    database = firebase.database();
+    db = firebase.firestore();
   }
 } catch (e) {
   console.error("Firebase failed to initialize:", e);
@@ -488,28 +488,33 @@ async function loadFromServerAndUrl() {
     }
   }
 
-  // 4. Listen for real-time updates from Firebase Realtime Database
-  if (database) {
-    database.ref("scores").on("value", (snapshot) => {
-      const fbScores = snapshot.val();
-      if (fbScores && typeof fbScores === "object") {
-        scoresData = fbScores;
-        saveScores();
-        calculateStandings();
-        renderFixtures();
-      }
-    });
+  // 4. Listen for real-time updates from Firebase Cloud Firestore
+  if (db) {
+    db.collection("scores_collection").doc("scores_doc")
+      .onSnapshot((doc) => {
+        if (doc.exists) {
+          const fbScores = doc.data();
+          if (fbScores && typeof fbScores === "object") {
+            scoresData = fbScores;
+            saveScores();
+            calculateStandings();
+            renderFixtures();
+          }
+        }
+      }, (error) => {
+        console.error("Firestore listen error:", error);
+      });
   }
 }
 
 function saveToFirebase() {
-  if (!database) {
+  if (!db) {
     showNotification("Firebase no está inicializado.", true);
     return;
   }
 
   showNotification("Guardando en la base de datos...");
-  database.ref("scores").set(scoresData)
+  db.collection("scores_collection").doc("scores_doc").set(scoresData)
     .then(() => {
       showNotification("¡Resultados guardados y sincronizados en la nube!");
     })
