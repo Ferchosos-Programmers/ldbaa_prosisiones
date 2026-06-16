@@ -54,7 +54,7 @@
             <!-- Managed dynamically by app.js -->
           </div>
 
-          <!-- <button
+          <button
             id="btn-settings"
             class="action-btn secondary-btn"
             onclick="openSettingsModal()"
@@ -62,10 +62,33 @@
             style="display: none"
           >
             <i class="fa-solid fa-gear"></i>
-          </button> -->
-          <!-- <button id="btn-reset" class="action-btn danger-btn" onclick="confirmReset()" title="Reiniciar Resultados" style="display: none;">
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button> -->
+          </button>
+          <button
+            id="btn-export"
+            class="action-btn primary-btn"
+            onclick="exportScores()"
+            title="Guardar Resultados (Descargar scores.json)"
+            style="display: none"
+          >
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Resultados
+          </button>
+          <button
+            id="btn-share"
+            class="action-btn secondary-btn"
+            onclick="shareState()"
+            title="Compartir enlace de resultados"
+          >
+            <i class="fa-solid fa-share-nodes"></i> Compartir
+          </button>
+          <button
+            id="btn-reset"
+            class="action-btn danger-btn"
+            onclick="confirmReset()"
+            title="Reiniciar Resultados"
+            style="display: none"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
         </div>
       </header>
 

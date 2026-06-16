@@ -263,8 +263,8 @@ const FIXTURES_TEMPLATE = {
       },
       {
         matches: [
-          { home: "Inter", away: "Dep Spencer" },
-          { home: "Ventanas", away: "Spencer" },
+          { home: "Inter", away: "Fluminense" },
+          { home: "Spencer", away: "Dep Spencer" },
         ],
         bye: "Ventanas",
       },
@@ -298,9 +298,9 @@ let scoresData = {};
 let fixturesData = {}; // Stores generated matches to keep them consistent
 
 // Initialize Application
-function init() {
+async function init() {
   checkAuthStatus();
-  loadFromLocalStorage();
+  await loadFromServerAndUrl();
   renderGroupTabs();
   generateAllFixtures(); // Generates if not already present
   updateView();
@@ -309,10 +309,11 @@ function init() {
 // Authentication Helpers
 function checkAuthStatus() {
   isAdmin = localStorage.getItem("ldbaa_is_admin") === "true";
-  
+
   const authContainer = document.getElementById("auth-container");
   const btnSettings = document.getElementById("btn-settings");
   const btnReset = document.getElementById("btn-reset");
+  const btnExport = document.getElementById("btn-export");
 
   if (authContainer) {
     if (isAdmin) {
@@ -324,12 +325,14 @@ function checkAuthStatus() {
       `;
       if (btnSettings) btnSettings.style.display = "inline-flex";
       if (btnReset) btnReset.style.display = "inline-flex";
+      if (btnExport) btnExport.style.display = "inline-flex";
     } else {
       authContainer.innerHTML = `
         <button class="action-btn primary-btn" onclick="openLoginModal()"><i class="fa-solid fa-lock"></i> Entrar Admin</button>
       `;
       if (btnSettings) btnSettings.style.display = "none";
       if (btnReset) btnReset.style.display = "none";
+      if (btnExport) btnExport.style.display = "none";
     }
   }
 }
@@ -416,6 +419,144 @@ function loadFromLocalStorage() {
     fixturesData = {};
     saveFixtures();
   }
+}
+
+async function loadFromServerAndUrl() {
+  // 1. First load from local storage
+  loadFromLocalStorage();
+
+  // 2. Try to fetch the latest scores from scores.json on the server
+  try {
+    const response = await fetch("scores.json");
+    if (response.ok) {
+      const serverScores = await response.json();
+      if (serverScores && typeof serverScores === "object") {
+        // If they are admin, merge them preferring local storage; if regular user, prioritize server
+        if (isAdmin) {
+          scoresData = { ...serverScores, ...scoresData };
+        } else {
+          scoresData = { ...scoresData, ...serverScores };
+        }
+        saveScores();
+      }
+    }
+  } catch (e) {
+    console.log("No scores.json found on server or error fetching it.");
+  }
+
+  // 3. Load shared state from URL query parameter if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedData = urlParams.get("data");
+  if (sharedData) {
+    try {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(sharedData))));
+      if (decoded && typeof decoded === "object") {
+        scoresData = { ...scoresData, ...decoded };
+        saveScores();
+        showNotification("Resultados cargados desde el enlace compartido.");
+        // Clean up URL parameter
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
+      }
+    } catch (e) {
+      console.error("Error decoding shared state from URL:", e);
+      showNotification("Error al cargar los datos del enlace.", true);
+    }
+  }
+}
+
+function exportScores() {
+  try {
+    const dataStr =
+      "data:text/json;charset=utf-8," +
+      encodeURIComponent(JSON.stringify(scoresData, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "scores.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showNotification(
+      "Archivo 'scores.json' descargado. Colócalo en la carpeta de tu proyecto.",
+    );
+  } catch (e) {
+    console.error("Error exporting scores:", e);
+    showNotification("Error al exportar los resultados.", true);
+  }
+}
+
+function shareState() {
+  try {
+    const encoded = btoa(
+      unescape(encodeURIComponent(JSON.stringify(scoresData))),
+    );
+    const shareUrl = `${window.location.origin}${window.location.pathname}?data=${encoded}`;
+
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => {
+        showNotification("¡Enlace de resultados copiado al portapapeles!");
+      })
+      .catch((err) => {
+        const tempInput = document.createElement("input");
+        tempInput.value = shareUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        showNotification("¡Enlace de resultados copiado al portapapeles!");
+      });
+  } catch (e) {
+    console.error("Error generating share link:", e);
+    showNotification("No se pudo generar el enlace de compartir.", true);
+  }
+}
+
+function showNotification(message, isError = false) {
+  const existing = document.getElementById("app-notification");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.id = "app-notification";
+  toast.style.position = "fixed";
+  toast.style.bottom = "2rem";
+  toast.style.right = "2rem";
+  toast.style.padding = "0.8rem 1.6rem";
+  toast.style.borderRadius = "12px";
+  toast.style.background = isError
+    ? "var(--danger)"
+    : "var(--primary-gradient)";
+  toast.style.color = "white";
+  toast.style.boxShadow = "var(--shadow-premium)";
+  toast.style.zIndex = "1000";
+  toast.style.fontSize = "0.9rem";
+  toast.style.fontWeight = "600";
+  toast.style.display = "flex";
+  toast.style.alignItems = "center";
+  toast.style.gap = "0.6rem";
+  toast.style.opacity = "0";
+  toast.style.transform = "translateY(20px)";
+  toast.style.transition = "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
+
+  toast.innerHTML = `<i class="fa-solid ${isError ? "fa-triangle-exclamation" : "fa-check"}"></i> ${message}`;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+  }, 10);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(20px)";
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 4000);
 }
 
 function saveTeams() {
@@ -707,8 +848,19 @@ function renderFixtures() {
 
     jGroup.innerHTML = `
             <div class="jornada-header">
-                <span>Jornada ${jornada.jornada}</span>
-                <span class="jornada-type">${jornada.type}</span>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>Jornada ${jornada.jornada}</span>
+                    <span class="jornada-type">${jornada.type}</span>
+                </div>
+                ${
+                  isAdmin
+                    ? `
+                <button class="action-btn primary-btn" style="padding: 0.3rem 0.7rem; font-size: 0.75rem; border-radius: 8px;" onclick="exportScores()">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar
+                </button>
+                `
+                    : ""
+                }
             </div>
             <div class="matches-list"></div>
             ${jornada.bye ? `<div class="jornada-bye">Descansa: <span>${jornada.bye}</span></div>` : ""}
@@ -740,7 +892,6 @@ function renderFixtures() {
     container.appendChild(jGroup);
   });
 }
-
 
 // Save scores automatically when changed
 function saveMatchScore(matchId, side, value) {
