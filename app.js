@@ -334,7 +334,6 @@ function checkAuthStatus() {
   const authContainer = document.getElementById("auth-container");
   const btnSettings = document.getElementById("btn-settings");
   const btnReset = document.getElementById("btn-reset");
-  const btnExport = document.getElementById("btn-export");
 
   if (authContainer) {
     if (isAdmin) {
@@ -346,14 +345,12 @@ function checkAuthStatus() {
       `;
       if (btnSettings) btnSettings.style.display = "inline-flex";
       if (btnReset) btnReset.style.display = "inline-flex";
-      if (btnExport) btnExport.style.display = "inline-flex";
     } else {
       authContainer.innerHTML = `
         <button class="action-btn primary-btn" onclick="openLoginModal()"><i class="fa-solid fa-lock"></i> Entrar Admin</button>
       `;
       if (btnSettings) btnSettings.style.display = "none";
       if (btnReset) btnReset.style.display = "none";
-      if (btnExport) btnExport.style.display = "none";
     }
   }
 }
