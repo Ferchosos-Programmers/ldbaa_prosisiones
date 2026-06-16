@@ -1,5 +1,26 @@
 // LDBAA - Positions & Fixture Logic
 
+// Firebase Configuration & Initialization
+const firebaseConfig = {
+  apiKey: "AIzaSyB-TjLhHM_7D9oUbS-8pw0y-sGNhFXYoME",
+  authDomain: "ldbaa-posiciones.firebaseapp.com",
+  projectId: "ldbaa-posiciones",
+  storageBucket: "ldbaa-posiciones.firebasestorage.app",
+  messagingSenderId: "362441809316",
+  appId: "1:362441809316:web:026b4b09f7fee579b97531",
+  databaseURL: "https://ldbaa-posiciones-default-rtdb.firebaseio.com"
+};
+
+let database = null;
+try {
+  if (typeof firebase !== "undefined") {
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+  }
+} catch (e) {
+  console.error("Firebase failed to initialize:", e);
+}
+
 // Default initialization data
 const DEFAULT_GROUPS = {
   masculino: {
@@ -425,7 +446,7 @@ async function loadFromServerAndUrl() {
   // 1. First load from local storage
   loadFromLocalStorage();
 
-  // 2. Try to fetch the latest scores from scores.json on the server
+  // 2. Try to fetch the latest scores from scores.json on the server as fallback
   try {
     const response = await fetch("scores.json");
     if (response.ok) {
@@ -466,6 +487,36 @@ async function loadFromServerAndUrl() {
       showNotification("Error al cargar los datos del enlace.", true);
     }
   }
+
+  // 4. Listen for real-time updates from Firebase Realtime Database
+  if (database) {
+    database.ref("scores").on("value", (snapshot) => {
+      const fbScores = snapshot.val();
+      if (fbScores && typeof fbScores === "object") {
+        scoresData = fbScores;
+        saveScores();
+        calculateStandings();
+        renderFixtures();
+      }
+    });
+  }
+}
+
+function saveToFirebase() {
+  if (!database) {
+    showNotification("Firebase no está inicializado.", true);
+    return;
+  }
+
+  showNotification("Guardando en la base de datos...");
+  database.ref("scores").set(scoresData)
+    .then(() => {
+      showNotification("¡Resultados guardados y sincronizados en la nube!");
+    })
+    .catch((error) => {
+      console.error("Firebase error saving:", error);
+      showNotification("Error al guardar en la base de datos.", true);
+    });
 }
 
 function exportScores() {
@@ -855,7 +906,7 @@ function renderFixtures() {
                 ${
                   isAdmin
                     ? `
-                <button class="action-btn primary-btn" style="padding: 0.3rem 0.7rem; font-size: 0.75rem; border-radius: 8px;" onclick="exportScores()">
+                <button class="action-btn primary-btn" style="padding: 0.3rem 0.7rem; font-size: 0.75rem; border-radius: 8px;" onclick="saveToFirebase()">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar
                 </button>
                 `

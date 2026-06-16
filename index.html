@@ -66,11 +66,11 @@
           <button
             id="btn-export"
             class="action-btn primary-btn"
-            onclick="exportScores()"
-            title="Guardar Resultados (Descargar scores.json)"
+            onclick="saveToFirebase()"
+            title="Guardar y sincronizar resultados en Firebase"
             style="display: none"
           >
-            <i class="fa-solid fa-floppy-disk"></i> Guardar Resultados
+            <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Resultados
           </button>
           <button
             id="btn-share"
@@ -290,6 +290,10 @@
         </form>
       </div>
     </div>
+
+    <!-- Firebase SDKs (Compat version to work with standard script-based setup) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <script src="app.js"></script>
   </body>
